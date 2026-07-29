@@ -12,12 +12,12 @@ package_update: true
 
 snap:
   commands:
-    - snap install microk8s --classic --channel 1.31/stable
+    - snap install microk8s --classic
     - snap alias microk8s.kubectl kubectl
     - snap alias microk8s.kubectl k
     - snap install --classic charmcraft
     - snap install --classic rockcraft
-    - snap install juju --channel=3.6/candidate
+    - snap install juju --channel=3.6/stable
     - snap refresh
 
 runcmd:
@@ -137,6 +137,6 @@ runcmd:
   - |
     # Install Terraform, bootstrap Juju, create models/users, deploy services.
     # Shared script — single source of truth for both VM and container flows.
-    bash /home/ubuntu/project/setup-juju-env.sh
+    bash /home/ubuntu/setup-juju-env.sh
 
 final_message: "The system is finally up, after $UPTIME seconds"

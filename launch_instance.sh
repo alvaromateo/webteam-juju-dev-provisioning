@@ -6,9 +6,11 @@
 set -e
 
 # Default configuration
+LAUNCH_FILES_DIR="${LAUNCH_FILES_DIR:-.}"
 INSTANCE_NAME="${1:-juju-dev}"
-MOUNT_POINT="/home/ubuntu/project"
-CLOUD_INIT_FILE="./cloud-init-juju.yaml"
+INSTANCE_HOME="/home/ubuntu"
+MOUNT_POINT="${INSTANCE_HOME}/project"
+CLOUD_INIT_FILE="${LAUNCH_FILES_DIR}/cloud-init-juju.yaml"
 
 # VM Resources (can be overridden via environment variables)
 CPUS="${JUJU_VM_CPUS:-6}"
@@ -83,6 +85,10 @@ while ! multipass list 2>/dev/null | grep -q "$INSTANCE_NAME.*Running"; do
     echo -n "."
 done
 echo " Instance is running and cloud-init is in progress!"
+
+# Add the necessary scripts
+multipass transfer ${LAUNCH_FILES_DIR}/setup-juju-env.sh "$INSTANCE_NAME:$INSTANCE_HOME"
+multipass transfer ${LAUNCH_FILES_DIR}/utils.sh "$INSTANCE_NAME:$INSTANCE_HOME"
 
 # Mount the current directory immediately once VM is running
 echo "Mounting current directory to $MOUNT_POINT..."

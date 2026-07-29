@@ -10,9 +10,11 @@
 set -e
 
 # Default configuration
+LAUNCH_FILES_DIR="${LAUNCH_FILES_DIR:-.}"
 INSTANCE_NAME="${1:-juju-dev}"
-MOUNT_POINT="/home/ubuntu/project"
-CLOUD_INIT_FILE="./cloud-init-juju-lxd.yaml"
+INSTANCE_HOME="/home/ubuntu"
+MOUNT_POINT="${INSTANCE_HOME}/project"
+CLOUD_INIT_FILE="${LAUNCH_FILES_DIR}/cloud-init-juju-lxd.yaml"
 IMAGE="${JUJU_LXD_IMAGE:-ubuntu:24.04}"
 
 # Container Resources (can be overridden via environment variables)
@@ -108,6 +110,10 @@ lxc config device override "$INSTANCE_NAME" root size="$DISK"
 
 # /dev/kmsg is required by kubelet — pass it through from the host
 lxc config device add "$INSTANCE_NAME" kmsg unix-char source=/dev/kmsg path=/dev/kmsg
+
+# Add the necessary scripts
+lxc file push ${LAUNCH_FILES_DIR}/setup-juju-env.sh "$INSTANCE_NAME/$INSTANCE_HOME"
+lxc file push ${LAUNCH_FILES_DIR}/utils.sh "$INSTANCE_NAME/$INSTANCE_HOME"
 
 # Mount the current directory into the container
 lxc config device add "$INSTANCE_NAME" project disk source="$(pwd)" path="$MOUNT_POINT"

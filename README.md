@@ -12,32 +12,26 @@ Provision local Juju development environments on either a **Multipass VM** or an
 - **Vault** (optional) - Secrets management
 - **DBaaS** (optional) - PostgreSQL with cross-model offers
 
-## Quick Start
+## Quick start
 
-### 1. Fetch the scripts
+### 1. Install
 
-From your project directory, run the init script with your chosen backend:
+Git clone this repository and optionally witch to the branch/tag of the version you want to use.
+Then enter the directory and run:
 
 ```bash
-# LXD container (lighter, shared host kernel)
-BACKEND=lxd bash <(curl -fsSL https://raw.githubusercontent.com/canonical/webteam-juju-dev-provisioning/main/init.sh)
-
-# Multipass VM (heavier, full isolation)
-BACKEND=vm bash <(curl -fsSL https://raw.githubusercontent.com/canonical/webteam-juju-dev-provisioning/main/init.sh)
-
-# Pin to a specific release
-BACKEND=lxd VERSION=v1.2.0 bash <(curl -fsSL https://raw.githubusercontent.com/canonical/webteam-juju-dev-provisioning/main/init.sh)
+chmod +x init.sh
+./init.sh
 ```
 
-| Variable  | Default | Description |
-|-----------|---------|-------------|
-| `BACKEND` | _(required)_ | `vm` or `lxd` |
-| `VERSION` | `main` | Git tag or branch to fetch from |
-| `REPO`    | `canonical/webteam-juju-dev-provisioning` | GitHub org/repo override |
+This will add 2 alias commands to your .bashrc/.zshrc (source those files or open a new terminal
+to be able to run them).
+- launch_vm
+- launch_lxd
 
 ### 2. Configure your environment
 
-Copy the example config and edit it:
+Copy the example config into your project and edit it according to your needs:
 
 ```bash
 cp juju_local.yaml.example juju_local.yaml
@@ -70,10 +64,10 @@ services:
 
 ```bash
 # LXD
-./launch_instance_lxd.sh myproject
+launch_lxd myproject
 
 # VM
-./launch_instance.sh myproject
+launch_vm myproject
 ```
 
 ### 4. Access
@@ -174,22 +168,21 @@ After provisioning, credentials are saved inside the instance:
 
 Each model gets a user with the same name and password as the model name.
 
-## Recommended .gitignore
-
-```gitignore
-# Local Juju provisioning scripts (fetched via init.sh)
-cloud-init-juju*.yaml
-launch_instance*.sh
-setup-juju-env.sh
-utils.sh
-juju_local.yaml
-```
-
 ## Versioning
 
-This repository uses semantic versioning. Pin to a specific version tag in your scripts.
+This repository uses semantic versioning. To use a specific version, switch to the corresponding branch/tag
+in the cloned repository.
 
 Check the [releases page](https://github.com/canonical/webteam-juju-dev-provisioning/releases) for available versions.
+
+If you need different versions for different projects you can clone the repository multiple times or
+use [Git Worktrees](https://git-scm.com/docs/git-worktree). Then you can invoke the `launch` commands passing
+the following environment variable pointing to the directory with the version you need:
+
+```bash
+LAUNCH_FILES_DIR=<path-to-dir> launch_vm
+LAUNCH_FILES_DIR=<path-to-dir> launch_lxd
+```
 
 ## Troubleshooting
 

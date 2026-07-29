@@ -1,40 +1,53 @@
 #!/bin/bash
 set -e
 
-REPO="${REPO:-canonical/webteam-juju-dev-provisioning}"
-BACKEND="${BACKEND:-}"
-VERSION="${VERSION:-main}"
-BASE="https://raw.githubusercontent.com/$REPO/$VERSION"
-
-if [ -z "$BACKEND" ] || [[ "$BACKEND" != "vm" && "$BACKEND" != "lxd" ]]; then
-  echo "Usage: BACKEND=<vm|lxd> [VERSION=<vX.Y.Z|main>] [REPO=org/repo] bash $0"
-  echo ""
-  echo "Examples:"
-  echo "  BACKEND=lxd bash $0"
-  echo "  BACKEND=vm VERSION=v1.2.0 bash $0"
-  exit 1
-fi
-
-SHARED="setup-juju-env.sh utils.sh juju_local.yaml.example"
-
-if [ "$BACKEND" = "vm" ]; then
-  FILES="cloud-init-juju.yaml launch_instance.sh $SHARED"
-else
-  FILES="cloud-init-juju-lxd.yaml launch_instance_lxd.sh $SHARED"
-fi
-
-echo "Fetching $BACKEND files ($VERSION) ..."
-for f in $FILES; do
-  curl -fsSL "$BASE/$f" -o "$f"
-  echo "  $f"
-done
-
 chmod +x ./*.sh
 
-echo ""
-echo "Done. Edit juju_local.yaml.example and save as juju_local.yaml, then run:"
-if [ "$BACKEND" = "vm" ]; then
-  echo "  ./launch_instance.sh [NAME]"
-else
-  echo "  ./launch_instance_lxd.sh [NAME]"
+# Absolute path to this repository (where the launch scripts and files live)
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check which SHELL does the user use
+case "$(basename "${SHELL:-}")" in
+  zsh)
+    RC_FILE="$HOME/.zshrc"
+    ;;
+  bash)
+    RC_FILE="$HOME/.bashrc"
+    ;;
+  *)
+    # Fall back to bash if the shell can't be determined
+    RC_FILE="$HOME/.bashrc"
+    echo "Warning: could not detect your shell from \$SHELL, defaulting to $RC_FILE"
+    ;;
+esac
+
+# Make sure the rc file exists before we append to it
+touch "$RC_FILE"
+
+# Check if LAUNCH_FILES_DIR environment variable is not defined
+# and append it to .bashrc/.zshrc if missing (depending on the user SHELL)
+if ! grep -q "export LAUNCH_FILES_DIR=" "$RC_FILE"; then
+  echo "export LAUNCH_FILES_DIR=\"$REPO_DIR\"" >> "$RC_FILE"
+  echo "Added LAUNCH_FILES_DIR to $RC_FILE"
 fi
+
+# Check if there's an alias for launch_lxd defined
+# and append it to .bashrc/.zshrc if missing (depending on the user SHELL)
+if ! grep -q "alias launch_lxd=" "$RC_FILE"; then
+  echo "alias launch_lxd=\"$REPO_DIR/launch_instance_lxd.sh\"" >> "$RC_FILE"
+  echo "Added launch_lxd alias to $RC_FILE"
+fi
+
+# Check if there's an alias for launch_vm defined
+# and append it to .bashrc/.zshrc if missing (depending on the user SHELL)
+if ! grep -q "alias launch_vm=" "$RC_FILE"; then
+  echo "alias launch_vm=\"$REPO_DIR/launch_instance.sh\"" >> "$RC_FILE"
+  echo "Added launch_vm alias to $RC_FILE"
+fi
+
+echo "Done."
+echo "Source $RC_FILE or open a new terminal to use the new aliases."
+echo "Copy juju_local.yaml.example to your project and save as juju_local.yaml."
+echo "Then run one of the following:"
+echo "    launch_lxd [NAME]"
+echo "    launch_vm [NAME]"
