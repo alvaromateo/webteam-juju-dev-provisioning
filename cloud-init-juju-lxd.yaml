@@ -137,6 +137,16 @@ runcmd:
     microk8s.kubectl rollout status deployments/hostpath-provisioner -n kube-system -w --timeout=600s
     microk8s.kubectl rollout status daemonsets/nginx-ingress-microk8s-controller -n ingress -w --timeout=600s
 
+    # metallb: allocate external IPs for LoadBalancer Services.
+    # Traefik Gateway exposes (gateway-api-integrator) exposes its entrypoint via a LoadBalancer service;
+    # with no allocator the Gateway never gets an address.
+    NODE_IP=$(ip -4 route get 1.1.1.1 | awk '{print $7; exit}') 
+    METALLB_BASE=$(echo "$NODE_IP" | cut -d. -f1-3)
+    METALLB_RANGE="${METALLB_BASE}.240-${METALLB_BASE}.250"
+    microk8s.enable metallb:"${METALLB_RANGE}"
+    microk8s.kubectl rollout status deployment/controller -n metallb-system -w --timeout=600s
+    microk8s.kubectl rollout status daemonset/speaker -n metallb-system -w --timeout=600s
+
   - |
     # ingress-local: enable IPv4 forwarding.
     echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/99-ingress-local.conf
