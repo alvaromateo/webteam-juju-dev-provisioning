@@ -6,11 +6,12 @@
 set -e
 
 # Default configuration
-LAUNCH_FILES_DIR="${LAUNCH_FILES_DIR:-.}"
+JUJU_DEV_DIR="${JUJU_DEV_DIR:-.}"
 INSTANCE_NAME="${1:-juju-dev}"
 INSTANCE_HOME="/home/ubuntu"
 MOUNT_POINT="${INSTANCE_HOME}/project"
-CLOUD_INIT_FILE="${LAUNCH_FILES_DIR}/cloud-init-juju.yaml"
+CLOUD_INIT_FILE="${JUJU_DEV_DIR}/cloud-init-juju.yaml"
+CONTAINER_FILES_DIR="${JUJU_DEV_DIR}/container"
 
 # VM Resources (can be overridden via environment variables)
 CPUS="${JUJU_VM_CPUS:-6}"
@@ -87,8 +88,12 @@ done
 echo " Instance is running and cloud-init is in progress!"
 
 # Add the necessary scripts
-multipass transfer ${LAUNCH_FILES_DIR}/setup-juju-env.sh "$INSTANCE_NAME:$INSTANCE_HOME"
-multipass transfer ${LAUNCH_FILES_DIR}/utils.sh "$INSTANCE_NAME:$INSTANCE_HOME"
+multipass transfer ${CONTAINER_FILES_DIR}/setup-juju-env.sh "$INSTANCE_NAME:$INSTANCE_HOME"
+multipass transfer ${CONTAINER_FILES_DIR}/utils.sh "$INSTANCE_NAME:$INSTANCE_HOME"
+multipass transfer ${CONTAINER_FILES_DIR}/configure_ingress_forwarding.sh "$INSTANCE_NAME:$INSTANCE_HOME"
+multipass exec $INSTANCE_NAME -- sudo ln -s $INSTANCE_HOME/setup-juju-env.sh /usr/local/bin/setup-juju-env
+multipass exec $INSTANCE_NAME -- sudo ln -s $INSTANCE_HOME/utils.sh /usr/local/bin/utils
+multipass exec $INSTANCE_NAME -- sudo ln -s $INSTANCE_HOME/configure_ingress_forwarding.sh /usr/local/sbin/configure_ingress_forwarding
 
 # Mount the current directory immediately once VM is running
 echo "Mounting current directory to $MOUNT_POINT..."

@@ -109,12 +109,22 @@ JUJU_VM_CPUS=8 JUJU_VM_MEMORY=8G ./launch_instance.sh myproject
 | `JUJU_VM_DISK`    | `50G`  | Disk size |
 | `JUJU_VM_TIMEOUT` | `3600` | Launch timeout (seconds) |
 
-## Utility Functions
+## Utility Functions and Scripts
+
+### host
+
+These scripts are meant to run directly in the host.
+
+Only macOS and Linux systems are supported.
+
+### container
+
+These scripts are meant to run inside the VM or LXC instances.
 
 Source `utils.sh` inside the instance for Terraform and Vault integration:
 
 ```bash
-source /home/ubuntu/project/utils.sh
+source /home/ubuntu/utils.sh
 
 # Export Juju connection info to a tfvars file
 export_terraform_vars \
@@ -142,6 +152,7 @@ lxc exec myproject -- tail -f /var/log/cloud-init-output.log  # Cloud-init logs
 lxc stop myproject                                        # Stop
 lxc start myproject                                       # Start
 lxc delete --force myproject                              # Delete
+lxc config device add myproject <unique-id> disk source=<host-folder> path=<instance-folder>  # Bind other folders
 ```
 
 ### Multipass
@@ -153,7 +164,8 @@ multipass exec myproject -- juju status                   # Juju status
 multipass exec myproject -- tail -f /var/log/cloud-init-output.log  # Cloud-init logs
 multipass stop myproject                                  # Stop
 multipass start myproject                                 # Start
-multipass delete myproject && multipass purge              # Delete
+multipass delete myproject && multipass purge             # Delete
+multipass mount <host-folder> myproject:<instance-folder>  # Bind other folders
 ```
 
 ## Credentials
@@ -180,8 +192,8 @@ use [Git Worktrees](https://git-scm.com/docs/git-worktree). Then you can invoke 
 the following environment variable pointing to the directory with the version you need:
 
 ```bash
-LAUNCH_FILES_DIR=<path-to-dir> launch_vm
-LAUNCH_FILES_DIR=<path-to-dir> launch_lxd
+JUJU_DEV_DIR=<path-to-dir> launch_vm
+JUJU_DEV_DIR=<path-to-dir> launch_lxd
 ```
 
 ## Troubleshooting

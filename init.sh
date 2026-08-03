@@ -24,25 +24,34 @@ esac
 # Make sure the rc file exists before we append to it
 touch "$RC_FILE"
 
-# Check if LAUNCH_FILES_DIR environment variable is not defined
+# Check if JUJU_DEV_DIR environment variable is not defined
 # and append it to .bashrc/.zshrc if missing (depending on the user SHELL)
-if ! grep -q "export LAUNCH_FILES_DIR=" "$RC_FILE"; then
-  echo "export LAUNCH_FILES_DIR=\"$REPO_DIR\"" >> "$RC_FILE"
-  echo "Added LAUNCH_FILES_DIR to $RC_FILE"
+if ! grep -q "export JUJU_DEV_DIR=" "$RC_FILE"; then
+  echo "# webteam-juju-dev-provisioning" >> "$RC_FILE"
+  echo "export JUJU_DEV_DIR=\"$REPO_DIR\"" >> "$RC_FILE"
+  echo "Added JUJU_DEV_DIR to $RC_FILE"
 fi
 
-# Check if there's an alias for launch_lxd defined
-# and append it to .bashrc/.zshrc if missing (depending on the user SHELL)
-if ! grep -q "alias launch_lxd=" "$RC_FILE"; then
-  echo "alias launch_lxd=\"$REPO_DIR/launch_instance_lxd.sh\"" >> "$RC_FILE"
-  echo "Added launch_lxd alias to $RC_FILE"
-fi
+# Aliases to add: alias name -> target script (relative to REPO_DIR)
+# Append each to .bashrc/.zshrc if missing (depending on the user SHELL)
+declare -A ALIASES=(
+  [launch_lxd]="launch_instance_lxd.sh"
+  [launch_vm]="launch_instance.sh"
+  [ingress_hosts_sync]="ingress_hosts_sync.py"
+  [container_ca_trust]="ca_trust.py"
+)
 
-# Check if there's an alias for launch_vm defined
-# and append it to .bashrc/.zshrc if missing (depending on the user SHELL)
-if ! grep -q "alias launch_vm=" "$RC_FILE"; then
-  echo "alias launch_vm=\"$REPO_DIR/launch_instance.sh\"" >> "$RC_FILE"
-  echo "Added launch_vm alias to $RC_FILE"
+for alias_name in "${!ALIASES[@]}"; do
+  if ! grep -q "alias ${alias_name}=" "$RC_FILE"; then
+    echo "alias ${alias_name}=\"$REPO_DIR/host/${ALIASES[$alias_name]}\"" >> "$RC_FILE"
+    echo "Added ${alias_name} alias to $RC_FILE"
+  fi
+done
+
+# Needed to avoid this issue:
+# https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
+if ! grep -q "alias sudo='sudo '" "$RC_FILE"; then
+  echo "alias sudo='sudo '" >> "$RC_FILE"
 fi
 
 echo "Done."

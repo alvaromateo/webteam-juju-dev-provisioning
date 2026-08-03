@@ -10,11 +10,12 @@
 set -e
 
 # Default configuration
-LAUNCH_FILES_DIR="${LAUNCH_FILES_DIR:-.}"
+JUJU_DEV_DIR="${JUJU_DEV_DIR:-.}"
 INSTANCE_NAME="${1:-juju-dev}"
 INSTANCE_HOME="/home/ubuntu"
 MOUNT_POINT="${INSTANCE_HOME}/project"
-CLOUD_INIT_FILE="${LAUNCH_FILES_DIR}/cloud-init-juju-lxd.yaml"
+CLOUD_INIT_FILE="${JUJU_DEV_DIR}/cloud-init-juju-lxd.yaml"
+CONTAINER_FILES_DIR="${JUJU_DEV_DIR}/container"
 IMAGE="${JUJU_LXD_IMAGE:-ubuntu:24.04}"
 
 # Container Resources (can be overridden via environment variables)
@@ -112,8 +113,12 @@ lxc config device override "$INSTANCE_NAME" root size="$DISK"
 lxc config device add "$INSTANCE_NAME" kmsg unix-char source=/dev/kmsg path=/dev/kmsg
 
 # Add the necessary scripts
-lxc file push ${LAUNCH_FILES_DIR}/setup-juju-env.sh "$INSTANCE_NAME/$INSTANCE_HOME"
-lxc file push ${LAUNCH_FILES_DIR}/utils.sh "$INSTANCE_NAME/$INSTANCE_HOME"
+lxc file push ${CONTAINER_FILES_DIR}/setup-juju-env.sh "$INSTANCE_NAME/$INSTANCE_HOME"
+lxc file push ${CONTAINER_FILES_DIR}/utils.sh "$INSTANCE_NAME/$INSTANCE_HOME"
+lxc file push ${CONTAINER_FILES_DIR}/configure_ingress_forwarding.sh "$INSTANCE_NAME/$INSTANCE_HOME"
+lxc exec $INSTANCE_NAME -- sudo ln -s $INSTANCE_HOME/setup-juju-env.sh /usr/local/bin/setup-juju-env
+lxc exec $INSTANCE_NAME -- sudo ln -s $INSTANCE_HOME/utils.sh /usr/local/bin/utils
+lxc exec $INSTANCE_NAME -- sudo ln -s $INSTANCE_HOME/configure_ingress_forwarding.sh /usr/local/sbin/configure_ingress_forwarding
 
 # Mount the current directory into the container
 lxc config device add "$INSTANCE_NAME" project disk source="$(pwd)" path="$MOUNT_POINT"
